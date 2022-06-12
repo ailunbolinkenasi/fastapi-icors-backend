@@ -4,6 +4,8 @@ from applications.public.url import public_services
 router = APIRouter()
 # 用户认证路由
 router.include_router(user)
+
+
 # 权限相关路由
 router.include_router(role)
 

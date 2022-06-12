@@ -1,4 +1,4 @@
-from fastapi import Depends,HTTPException
+from fastapi import Depends, HTTPException
 from tortoise.expressions import Q
 from applications.user.bodys import UserInfo, SmsBody
 from aioredis import Redis
@@ -111,8 +111,9 @@ async def login_sms(auth: SmsBody, code_redis: Redis = Depends(sms_code_cache),
     # 判断验证码
     if auth.sms_code == redis_sms_code:
         # token写入redis
-        await token_redis.set(name=auth.mobile_phone, value=create_access_token(username=auth.mobile_phone),
-                              ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = await token_redis.set(name=auth.mobile_phone,
+                                             value=create_access_token(username=auth.mobile_phone),
+                                             ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
         # 验证码写入redis
         return Response(data={"access_token": access_token}, msg="登录成功", code=200)
     raise HTTPException(status_code=400, detail="验证码错误或者已经失效!")
@@ -125,4 +126,5 @@ async def create_user(user: CreateUser):
     if get_username:
         raise HTTPException(status_code=400, detail=f"{get_username.username}已经存在,请勿重复添加!")
     user.password = hash_password(user.password)
+    create = await User.create(**user.dict())
     return Response(data=user.__dict__, msg="添加成功")

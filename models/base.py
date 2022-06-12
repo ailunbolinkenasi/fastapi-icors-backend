@@ -81,3 +81,6 @@ class AccessLog(TimestampMixin):
     class Meta:
         table_description = "用户操作记录表"
         table = "access_log"
+
+
+class

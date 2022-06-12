@@ -10,8 +10,8 @@ class Config(BaseSettings):
     # 调试模式
     APP_DEBUG: bool = True
     # 项目信息
-    VERSION: str = "0.0.1"
-    PROJECT_NAME: str = " FastAPI-Demo"
+    VERSION: str = "1.0.0"
+    PROJECT_NAME: str = "icors设备管理系统接口文档"
     DESCRIPTION: str = '服务的API接口文档'
     # 静态资源目录
     # STATIC_DIR: str = os.path.join(os.getcwd(), "static")
@@ -35,5 +35,6 @@ class Config(BaseSettings):
     ALIYUN_ACCESSKEY_ID = ""
     ALIYUN_ACCESSKEY_SECRET = ""
     ALIYUN_SIGN_NAME = ''
+
 
 settings = Config()

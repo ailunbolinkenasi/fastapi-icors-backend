@@ -12,15 +12,6 @@
 ## 配置部分
 配置文件存放`core/Config.py`配置文件中,项目目录后续在更新吧.
 ```python
-import os
-# from dotenv import load_dotenv, find_dotenv
-from pydantic import BaseSettings
-from typing import List
-
-
-class Config(BaseSettings):
-    # 加载环境变量
-    # load_dotenv(find_dotenv(), override=True)
     # 调试模式
     APP_DEBUG: bool = True
     # 项目信息
