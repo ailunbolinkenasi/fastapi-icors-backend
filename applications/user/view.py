@@ -1,3 +1,4 @@
+import aioredis.exceptions
 from fastapi import Depends, Query, Form, HTTPException, Request
 from tortoise.expressions import Q
 from applications.user.bodys import UserInfo, SmsBody, CreateUser
@@ -24,7 +25,10 @@ async def register(user: RegisterBody, token_cache: Redis = Depends(token_code_c
     user.password = hash_password(user.password)
     # 注册后也会将token存储到Redis当中
     access_token = create_access_token(username=user.username)
-    await token_cache.set(name=user.username, value=access_token, ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+    try:
+        await token_cache.set(name=user.username, value=access_token, ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+    except aioredis.exceptions.ConnectionError:
+        raise HTTPException(status_code=500, detail="Redis连接失败,请检查服务端Redis状态,")
     await User.create(**user.dict())
     return Response(data={"access_token": access_token}, msg="注册成功")
 
@@ -44,7 +48,7 @@ async def login(req: Request, user: UserBodyBase, token_cache: Redis = Depends(t
     user_obj = await User.get_or_none(Q(username=user.username))
     # 判断用户是否存在
     if not user_obj:
-        raise HTTPException(status_code=400, detail=f"{user.username}密码验证失败错误1")
+        raise HTTPException(status_code=400, detail=f"{user.username}密码验证失败错误.")
     # 判断用户是否处于禁用状态
     if not user_obj.is_activate:
         raise HTTPException(status_code=400, detail=f"{user.username}已被禁用,请联系管理员.")
@@ -58,7 +62,6 @@ async def login(req: Request, user: UserBodyBase, token_cache: Redis = Depends(t
         access_token = create_access_token(user.username)
         await token_cache.set(name=user.username, value=access_token, ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
         return Response(data={"access_token": access_token}, msg="登录成功")
-    req.state.username = user.username
     # 如果获取到用户,然后进行验证密码
     if user_obj:
         if verify_password(user.password, user_obj.password):

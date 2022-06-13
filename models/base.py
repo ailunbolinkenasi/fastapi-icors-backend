@@ -32,7 +32,7 @@ class User(TimestampMixin):
     password = fields.CharField(null=True, max_length=255)
     mobile_phone = fields.CharField(unique=True, null=False, description="手机号", max_length=11)
     email = fields.CharField(unique=True, null=False, description='邮箱', max_length=255)
-    full_name = fields.CharField(null=False, description='姓名', max_length=255)
+    full_name = fields.CharField(null=True, description='姓名', max_length=15)
     is_activate = fields.BooleanField(default=0, description='0未激活 1正常 2禁用')
     is_staff = fields.BooleanField(default=False, description="用户类型 True:超级管理员 False:普通管理员")
     header_img = fields.CharField(null=True, max_length=255, description='用户头像')

@@ -66,3 +66,4 @@ watchgod==0.8.2
 websockets==10.3
 xmltodict==0.13.0
 zipp==3.8.0
+fastapi-limiter==0.1.4

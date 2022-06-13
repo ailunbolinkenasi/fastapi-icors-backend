@@ -1,10 +1,10 @@
 # FastAPI事件监听
+import  aioredis
 from typing import Callable
 from fastapi import FastAPI
-from database.redis import sys_cache,token_code_cache
-from aioredis import Redis
-from  database.mysql import register_mysql
-
+from database.redis import sys_cache
+from database.mysql import register_mysql
+from fastapi_limiter import FastAPILimiter
 
 # Callable  作为函数返回值使用，其实只是做一个类型检查的作用，看看返回值是否为可调用对象
 def startup(app: FastAPI) -> Callable:
@@ -21,6 +21,9 @@ def startup(app: FastAPI) -> Callable:
         await register_mysql(app)
         # 注入缓存到app state
         app.state.cache = await sys_cache()
+        # 启动计数器
+        redis = await aioredis.from_url("redis://10.1.6.110:32547", encoding="utf-8", decode_responses=True)
+        await FastAPILimiter.init(redis)
 
     return app_start
 
