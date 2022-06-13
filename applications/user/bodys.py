@@ -18,7 +18,7 @@ class SmsBody(BaseModel):
 
 # 用户基础模
 class UserBodyBase(BaseBody):
-    username: str = Field(..., description="用户名", min_length=5, max_length=15)
+    username: str = Field(..., description="用户名", min_length=4, max_length=15)
     password: str = Field(..., description="用户密码", min_length=8)
 
 
@@ -29,11 +29,6 @@ class RegisterBody(UserBodyBase):
     login_host: Optional[str] = "127.0.0.1"
 
 
-# 登录校验模型
-class UserAuth(UserBodyBase):
-    pass
-
-
 # 返回用户信息模型
 class UserInfo(BaseModel):
     id: int
@@ -41,3 +36,10 @@ class UserInfo(BaseModel):
     mobile_phone: str
     email: str
     is_active: str = Field(..., description="用户是否激活")
+
+
+# 创建用户模型
+class CreateUser(UserBodyBase):
+    email: EmailStr = Field(..., description="用户邮箱")
+    mobile_phone: str = Field(..., regex=r"1[3-9]\d{9}$", description="手机号")
+    is_activate: bool = Field(..., description="是否激活用户")

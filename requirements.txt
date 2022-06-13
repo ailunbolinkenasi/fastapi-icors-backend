@@ -62,7 +62,6 @@ ujson==5.3.0
 uritemplate==4.1.1
 urllib3==1.26.9
 uvicorn==0.17.6
-uvloop==0.16.0
 watchgod==0.8.2
 websockets==10.3
 xmltodict==0.13.0

@@ -1,10 +1,10 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, applications
 from starlette.middleware.cors import CORSMiddleware
 
 from core.Events import startup, stopping
 from core.config import settings
-from fastapi.openapi.docs import get_swagger_ui_oauth2_redirect_html
+from fastapi.openapi.docs import get_swagger_ui_oauth2_redirect_html, get_swagger_ui_html
 from core.Router import router
 
 # 实例化
@@ -16,7 +16,20 @@ application = FastAPI(
     swagger_ui_oauth2_redirect_url=settings.SWAGGER_UI_OAUTH2_REDIRECT_URL,
 )
 
+
 # 重写swagger_ui_js地址
+def swagger_monkey_patch(*args, **kwargs):
+    """
+    Wrap the function which is generating the HTML for the /docs endpoint and
+    overwrite the default values for the swagger js and css.
+    """
+    return get_swagger_ui_html(
+        *args, **kwargs,
+        swagger_js_url="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-bundle.js",
+        swagger_css_url="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui.css")
+
+
+applications.get_swagger_ui_html = swagger_monkey_patch
 
 # 跨域请求处理
 application.add_middleware(

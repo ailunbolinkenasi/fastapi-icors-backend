@@ -28,13 +28,11 @@ class Role(TimestampMixin):
 # 用户表
 class User(TimestampMixin):
     role: fields.ManyToManyRelation[Role]
-    id = fields.IntField(pk=True)
-    username = fields.CharField(unique=True, null=False, max_length=20, description="用户名")
+    username = fields.CharField(unique=True, null=False, max_length=15, description="用户名")
     password = fields.CharField(null=True, max_length=255)
-    nickname = fields.CharField(unique=False, default='请更改用户名', max_length=255, description='昵称')
     mobile_phone = fields.CharField(unique=True, null=False, description="手机号", max_length=11)
     email = fields.CharField(unique=True, null=False, description='邮箱', max_length=255)
-    # full_name = fields.CharField(null=False, description='姓名', max_length=255)
+    full_name = fields.CharField(null=False, description='姓名', max_length=255)
     is_activate = fields.BooleanField(default=0, description='0未激活 1正常 2禁用')
     is_staff = fields.BooleanField(default=False, description="用户类型 True:超级管理员 False:普通管理员")
     header_img = fields.CharField(null=True, max_length=255, description='用户头像')
@@ -81,6 +79,3 @@ class AccessLog(TimestampMixin):
     class Meta:
         table_description = "用户操作记录表"
         table = "access_log"
-
-
-class

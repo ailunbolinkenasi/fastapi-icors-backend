@@ -21,8 +21,3 @@ class AddHost(BaseModel):
     username: str = Field(..., description="服务器用户名", max_length=12)
     password: str = Field(..., description="服务器密码", max_length=32)
     manager: str = Field(..., description="管理者", max_length=12)
-
-
-
-class UpdateHost(BaseBody):
-    
