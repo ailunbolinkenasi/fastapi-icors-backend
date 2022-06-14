@@ -17,18 +17,18 @@ application = FastAPI(
 
 
 # 重写swagger_ui_js地址
-def swagger_monkey_patch(*args, **kwargs):
-    """
-    Wrap the function which is generating the HTML for the /docs endpoint and
-    overwrite the default values for the swagger js and css.
-    """
-    return get_swagger_ui_html(
-        *args, **kwargs,
-        swagger_js_url="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-bundle.js",
-        swagger_css_url="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui.css")
+# def swagger_monkey_patch(*args, **kwargs):
+#     """
+#     Wrap the function which is generating the HTML for the /docs endpoint and
+#     overwrite the default values for the swagger js and css.
+#     """
+#     return get_swagger_ui_html(
+#         *args, **kwargs,
+#         swagger_js_url="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-bundle.js",
+#         swagger_css_url="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui.css")
 
 
-applications.get_swagger_ui_html = swagger_monkey_patch
+# applications.get_swagger_ui_html = swagger_monkey_patch
 
 # 跨域请求处理
 application.add_middleware(

@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 import aioredis.exceptions
 from fastapi import Depends, Query, Form, HTTPException, Request
+from fastapi.security import OAuth2PasswordRequestForm
 from tortoise.expressions import Q, F
 from applications.user.bodys import UserInfo, SmsBody, CreateUser
 from aioredis import Redis
@@ -172,5 +175,15 @@ async def get_user_list(pageSize: int = 10, current: int = 1, username: str = Qu
 
 
 # 获取Oath2
-async def read_items(token: str = Depends(OAuth2)):
-    return {"token": token}
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = await User.get_or_none(username=form_data.username)
+    if not user:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    if not verify_password(form_data.password, user.password):
+        return False
+    access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        user.username,
+        expires_delta=access_token_expires,
+    )
+    return {"access_token": access_token, "token_type": "bearer"}

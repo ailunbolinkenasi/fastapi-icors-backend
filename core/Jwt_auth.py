@@ -97,3 +97,4 @@ async def check_token_http(req: Request, security_scopes: SecurityScopes, token=
                     detail="没权限,别乱看！",
                     headers={"scopes": security_scopes.scope_str},
                 )
+
