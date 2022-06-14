@@ -1,5 +1,6 @@
 import random
-from fastapi import Depends
+import Tea.exceptions
+from fastapi import Depends,HTTPException
 from core.config import settings
 from core.Utils import create_client
 from core.mall import Response, ErrorResponse
@@ -22,18 +23,22 @@ async def aliyun_send(mobile_phone: str, sms_cache: Redis = Depends(sms_code_cac
     client = create_client(settings.ALIYUN_ACCESSKEY_ID, settings.ALIYUN_ACCESSKEY_SECRET)
     # 生成六位数随机验证码
     verification_code = str(random.randrange(1000, 999999))
-    # 发送请求
-    send_sms_request = dysmsapi_20170525_models.SendSmsRequest(
-        phone_numbers=mobile_phone,
-        sign_name=settings.ALIYUN_SIGN_NAME,
-        template_code="SMS_242870552",
-        template_param=("{\"code\":\"%s\"}" % verification_code)
-        # 以下格式化方式不可用
-        # template_param=f'{"code":{verification_code}}'
-    )
-    runtime = util_models.RuntimeOptions()
-    # 异步数据需要使用await 进行获取
-    data = await client.send_sms_with_options_async(send_sms_request, runtime)
+    try:
+        # 发送请求
+        send_sms_request = dysmsapi_20170525_models.SendSmsRequest(
+            phone_numbers=mobile_phone,
+            sign_name=settings.ALIYUN_SIGN_NAME,
+            template_code="SMS_242870552",
+            template_param=("{\"code\":\"%s\"}" % verification_code)
+            # 以下格式化方式不可用
+            # template_param=f'{"code":{verification_code}}'
+        )
+        runtime = util_models.RuntimeOptions()
+        # 异步数据需要使用await 进行获取
+        data = await client.send_sms_with_options_async(send_sms_request, runtime)
+    except Tea.exceptions.TeaException:
+        raise HTTPException(status_code=400,detail=" AccessKeyId is mandatory for this action")
+
     if data.body.code == "OK":
         # 将验证码写入Redis
         await sms_cache.set(name=mobile_phone, value=verification_code, ex=60)

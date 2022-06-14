@@ -24,12 +24,12 @@ class AddHost(BaseModel):
 
 
 # 更新主机
-class UpdateHost(BaseModel):
-    physical_addr: Optional[str] = Field(..., description="服务器硬件地址", max_length=32)
-    ipaddr: Optional[str] = Field(..., description="IP地址", max_length=32)
-    cpu: Optional[str] = Field(..., description="CPU核心数量", max_length=8)
-    memory: Optional[str] = Field(..., description="内存容量", max_length=8)
-    hard_disk: Optional[str] = Field(..., description="硬盘容量", max_length=8)
-    username: Optional[str] = Field(..., description="服务器用户名", max_length=12)
-    password: Optional[str] = Field(..., description="服务器密码", max_length=32)
-    manager: Optional[str] = Field(..., description="管理者", max_length=12)
+# class UpdateHost(BaseModel):
+#     physical_addr: str = Field(..., description="服务器硬件地址", max_length=32)
+#     ipaddr: str = Field(..., description="IP地址", max_length=32)
+#     cpu: str = Field(..., description="CPU核心数量", max_length=8)
+#     memory: str = Field(..., description="内存容量", max_length=8)
+#     hard_disk: str = Field(..., description="硬盘容量", max_length=8)
+#     username: Optional[str] = Field(..., description="服务器用户名", max_length=12)
+#     password: Optional[str] = Field(..., description="服务器密码", max_length=32)
+#     manager: Optional[str] = Field(..., description="管理者", max_length=12)

@@ -7,9 +7,8 @@ from pydantic import ValidationError
 from starlette import status
 import jwt
 from core.config import settings
-
-OAuth2 = OAuth2PasswordBearer(settings.SWAGGER_UI_OAUTH2_REDIRECT_URL, scheme_name="User",
-                              scopes={"is_admin": "超级管理员", "not_admin": "普通用户"})
+from fastapi.security import OAuth2
+OAuth2 = OAuth2PasswordBearer(tokenUrl=settings.SWAGGER_UI_OAUTH2_REDIRECT_URL)
 
 
 # 创建用户访问token
@@ -76,6 +75,7 @@ async def check_token_http(req: Request, security_scopes: SecurityScopes, token=
         )
     # 验证权限
     get_user = await User.get_or_none(username=username)
+    print(get_user)
     if not get_user or get_user.is_activate != 1:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

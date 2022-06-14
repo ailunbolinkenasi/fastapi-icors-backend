@@ -1,6 +1,7 @@
 from fastapi import Depends, Query, HTTPException
 from tortoise.expressions import Q
-from applications.system.bodys import AddHost, UpdateHost
+from applications.system.bodys import AddHost
+from applications.system.bodys import AddHost as UpdateHost
 from core.mall import Response
 from models.device import Device
 from fastapi import Request

@@ -1,13 +1,13 @@
 import aioredis.exceptions
 from fastapi import Depends, Query, Form, HTTPException, Request
-from tortoise.expressions import Q
+from tortoise.expressions import Q, F
 from applications.user.bodys import UserInfo, SmsBody, CreateUser
 from aioredis import Redis
 from applications.user.bodys import RegisterBody, UserBodyBase
 from core.Utils import hash_password, verify_password
 from core.mall import Response
 from core.config import settings
-from core.Jwt_auth import create_access_token
+from core.Jwt_auth import create_access_token, OAuth2
 from database.redis import token_code_cache, sms_code_cache
 from models.base import User, Role, Access
 
@@ -59,20 +59,47 @@ async def login(req: Request, user: UserBodyBase, token_cache: Redis = Depends(t
     # 如果获取到用户,然后进行验证密码
     if verify_password(user.password, user_obj.password):
         # 验证密码成功,生成access_token存入Redis
-        access_token = create_access_token(user.username)
+        access_token = create_access_token(username=user.username)
         await token_cache.set(name=user.username, value=access_token, ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-        return Response(data={"access_token": access_token}, msg="登录成功")
-    # 如果获取到用户,然后进行验证密码
-    if user_obj:
-        if verify_password(user.password, user_obj.password):
-            # 验证密码成功,生成access_token存入Redis
-            access_token = create_access_token(user.username)
-            await token_cache.set(name=user.username, value=access_token, ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-            return Response(data={"access_token": access_token}, msg="登录成功")
+        data = {"access_token": access_token, "expires_in": settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60}
+        return Response(data=data, msg="登录成功")
     raise HTTPException(status_code=400, detail="用户名或密码错误!")
 
 
-# 获取当前用户信息
+# 短信登录
+async def login_sms(auth: SmsBody, code_redis: Redis = Depends(sms_code_cache),
+                    token_redis: Redis = Depends(token_code_cache)):
+    """
+    :param auth: 短信认证模型
+    :param code_redis:  验证码缓存
+    :param token_redis:  登录token缓存
+    :return:
+    """
+    # 判断用户是否存在
+    get_user = await User.get_or_none(Q(username=auth.mobile_phone) | Q(mobile_phone=auth.mobile_phone))
+    if not get_user:
+        raise HTTPException(status_code=400, detail="密码验证失败!")
+    if not get_user.is_activate:
+        raise HTTPException(status_code=400, detail=f"{auth.mobile_phone}已被禁用,请联系管理员.")
+    # 尝试获取token在redis中的缓存
+    token_cache = await token_redis.get(auth.mobile_phone)
+    # 判断用户是否登录
+    if token_cache:
+        return Response(data={"access_token": token_cache}, msg="已经登录,禁止重复登录", code=400)
+    # 获取redis中的短信验证码
+    redis_sms_code = await code_redis.get(auth.mobile_phone)
+    # 判断验证码
+    if auth.sms_code == redis_sms_code:
+        # token写入redis
+        access_token = create_access_token(username=auth.mobile_phone)
+        await token_redis.set(name=auth.mobile_phone, value=access_token,
+                              ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+        # 验证码写入redis
+        return Response(data={"access_token": access_token}, msg="登录成功", code=200)
+    raise HTTPException(status_code=400, detail="验证码错误或者已经失效!")
+
+
+# 查询用户信息
 async def get_user_info(username: str = Query(default=None, max_length=20)):
     """
     :param username:   通过用户名查询
@@ -96,63 +123,6 @@ async def get_user_info(username: str = Query(default=None, max_length=20)):
     raise HTTPException(status_code=400, detail="查询结果为空.")
 
 
-# 获取用用户权限集合
-async def get_user_role(user_id: int):
-    """
-    :param user_id:  传入用户Id
-    :return:
-    """
-    # 查询用户角色
-    user_role = await Role.filter(user__id=user_id).values("role_name", "role_status")
-    # 查询用户的所有权限,反向查询role角色表中的跟user表关联的user_id
-    user_access_list = await Access.filter(role__user__id=user_id, is_check=True).values("id", "scopes")
-    # 验证当前用户对当前操作的作用域是否有权限
-    is_permi = await Access.get_or_none(role__user__id=user_id, is_check=True, scopes="user_info",
-                                        role__role_status=True)
-    data = {
-        "role_info": user_role,
-        "user_access_list": user_access_list
-    }
-
-    if user_role:
-        return Response(data=data, msg="获取成功", code=200)
-    raise HTTPException(status_code=400, detail="获取失败,该用户无权限分配或权限分配失败.")
-
-
-# 短信登录
-async def login_sms(auth: SmsBody, code_redis: Redis = Depends(sms_code_cache),
-                    token_redis: Redis = Depends(token_code_cache)):
-    """
-    :param auth: 短信认证模型
-    :param code_redis:  验证码缓存
-    :param token_redis:  登录token缓存
-    :return:
-    """
-    # 判断用户是否存在
-    get_user = await User.get_or_none(Q(username=auth.mobile_phone) | Q(mobile_phone=auth.mobile_phone))
-    if not get_user:
-        raise HTTPException(status_code=400, detail="密码验证失败!")
-    if not get_user.is_activate:
-        raise HTTPException(status_code=400, detail=f"{auth.mobile_phone}已被禁用,请联系管理员.")
-    # 尝试获取token在redis中的缓存
-    token_cache = await token_redis.get(auth.mobile_phone)
-    # 判断用户是否登录
-    if token_cache:
-        return Response(data={"access_token": token_cache}, msg="已经登录,禁止重复登录", code=400)
-
-    # 获取redis中的短信验证码
-    redis_sms_code = await code_redis.get(auth.mobile_phone)
-    # 判断验证码
-    if auth.sms_code == redis_sms_code:
-        # token写入redis
-        access_token = create_access_token(username=auth.mobile_phone)
-        await token_redis.set(name=auth.mobile_phone, value=access_token,
-                              ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-        # 验证码写入redis
-        return Response(data={"access_token": access_token}, msg="登录成功", code=200)
-    raise HTTPException(status_code=400, detail="验证码错误或者已经失效!")
-
-
 # 添加用户
 async def create_user(user: CreateUser):
     get_username = await User.get_or_none(username=user.username)
@@ -161,3 +131,46 @@ async def create_user(user: CreateUser):
         raise HTTPException(status_code=400, detail=f"{get_username.username}已经存在,请勿重复添加!")
     user.password = hash_password(user.password)
     return Response(data=user.__dict__, msg="添加成功")
+
+
+# 删除用户
+async def delete_user(user_id: int, token: str = Depends(OAuth2)):
+    """
+    :user_id: 传入需要删除的用户Id
+    """
+    if user_id == 1:
+        raise HTTPException(status_code=400, detail="啊啊啊啊啊不要删除管理员啊😊")
+    data = {"token": token}
+    return Response(data=data, msg="成功")
+
+
+# 获取用户列表
+async def get_user_list(pageSize: int = 10, current: int = 1, username: str = Query(None),
+                        mobile_phone: str = Query(None), email: str = Query(None), is_activate: bool = Query(None)):
+    """
+    获取所有用户
+    : return:
+    """
+    query = {}
+    if username:
+        query.setdefault('username', username)
+    if mobile_phone:
+        query.setdefault('mobile_phone', mobile_phone)
+    if email:
+        query.setdefault('email', email)
+    if is_activate is not None:
+        query.setdefault('is_activate', is_activate)
+
+    user_data = User.annotate(key=F("id")).filter(**query).filter(id__not=1).all()
+    # 总数
+    total = await user_data.count()
+    # 查询
+    data = await user_data.limit(pageSize).offset(pageSize * (current - 1)).order_by("-create_time").values(
+        "id", "username", "mobile_phone", "email", "is_activate"
+    )
+    return Response(data=data, msg="查询成功")
+
+
+# 获取Oath2
+async def read_items(token: str = Depends(OAuth2)):
+    return {"token": token}

@@ -1,7 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, applications
 from starlette.middleware.cors import CORSMiddleware
-
 from core.Events import startup, stopping
 from core.config import settings
 from fastapi.openapi.docs import get_swagger_ui_oauth2_redirect_html, get_swagger_ui_html

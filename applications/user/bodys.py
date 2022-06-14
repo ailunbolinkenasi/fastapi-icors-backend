@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -43,3 +43,4 @@ class CreateUser(UserBodyBase):
     email: EmailStr = Field(..., description="用户邮箱")
     mobile_phone: str = Field(..., regex=r"1[3-9]\d{9}$", description="手机号")
     is_activate: bool = Field(..., description="是否激活用户")
+
