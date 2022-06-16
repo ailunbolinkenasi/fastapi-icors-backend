@@ -1,9 +1,6 @@
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr, Field
 
-
-# 入参模型
-
 # 基础的基础
 class BaseBody(BaseModel):
     class Config:
@@ -16,7 +13,7 @@ class SmsBody(BaseModel):
     sms_code: str = Field(..., description="短信验证码", min_length=6, max_length=6)
 
 
-# 用户基础模
+# 用户基础模型
 class UserBodyBase(BaseBody):
     username: str = Field(..., description="用户名", min_length=4, max_length=15)
     password: str = Field(..., description="用户密码", min_length=8)

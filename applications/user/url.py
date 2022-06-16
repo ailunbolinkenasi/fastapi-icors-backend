@@ -3,6 +3,7 @@ from applications.user.view import register, login, get_user_info, login_sms, ge
     login_for_access_token
 from core.Jwt_auth import check_token_http
 from fastapi_limiter.depends import RateLimiter
+from schemas.token import Token
 
 user = APIRouter(
     prefix="/v1",
@@ -40,7 +41,7 @@ user.delete("/delete/user",
             tags=['用户服务']
             )(delete_user)
 
-user.post('/oauth2',
-          summary="11",
-          tags=['用户'],
-          )(login_for_access_token)
+user.post('/login/access_token',
+          summary="获取token接口",
+          tags=['获取用户token接口'],
+          response_model=Token)(login_for_access_token)

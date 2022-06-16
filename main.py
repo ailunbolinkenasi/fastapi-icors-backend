@@ -15,7 +15,6 @@ application = FastAPI(
     swagger_ui_oauth2_redirect_url=settings.SWAGGER_UI_OAUTH2_REDIRECT_URL,
 )
 
-
 # 重写swagger_ui_js地址
 # def swagger_monkey_patch(*args, **kwargs):
 #     """

@@ -11,6 +11,7 @@ from typing import Optional
 # 添加服务器信息
 async def add_hosts(host: AddHost):
     hosts_list = await Device.get_or_none(ipaddr=host.ipaddr)
+
     if hosts_list:
         raise HTTPException(status_code=400, detail=f"{hosts_list.ipaddr}已添加!")
     await Device.create(**host.dict())

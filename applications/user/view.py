@@ -48,7 +48,6 @@ async def login(req: Request, user: UserBodyBase, token_cache: Redis = Depends(t
         user_obj = await User.get_or_none(Q(username=user.username))
     except AttributeError as e:
         raise HTTPException(status_code=500, detail=f"{e}")
-    user_obj = await User.get_or_none(Q(username=user.username))
     # 判断用户是否存在
     if not user_obj:
         raise HTTPException(status_code=400, detail=f"{user.username}密码验证失败错误.")
@@ -56,14 +55,22 @@ async def login(req: Request, user: UserBodyBase, token_cache: Redis = Depends(t
     if not user_obj.is_activate:
         raise HTTPException(status_code=400, detail=f"{user.username}已被禁用,请联系管理员.")
     # 如果redis中存在用户当前用户的token
-    user_token = await token_cache.get(name=user.username)
+    try:
+        user_token = await token_cache.get(name=user.username)
+    # 如果抛出Redis连接异常
+    except aioredis.connection.ConnectionError as e:
+        raise HTTPException(status_code=500, detail="获取失败,请检查Redis连接是否正常！")
+
     if user_token:
         raise HTTPException(status_code=400, detail=f"{user.username}已经登陆,禁止重复登陆.")
     # 如果获取到用户,然后进行验证密码
     if verify_password(user.password, user_obj.password):
         # 验证密码成功,生成access_token存入Redis
         access_token = create_access_token(username=user.username)
-        await token_cache.set(name=user.username, value=access_token, ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+        try:
+            await token_cache.set(name=user.username, value=access_token, ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+        except aioredis.connection.ConnectionError:
+            raise HTTPException(status_code=500, detail="Redis服务连接失败,请检查后端日志!")
         data = {"access_token": access_token, "expires_in": settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60}
         return Response(data=data, msg="登录成功")
     raise HTTPException(status_code=400, detail="用户名或密码错误!")
@@ -133,6 +140,7 @@ async def create_user(user: CreateUser):
     if get_username:
         raise HTTPException(status_code=400, detail=f"{get_username.username}已经存在,请勿重复添加!")
     user.password = hash_password(user.password)
+    await User.create(**user.dict())
     return Response(data=user.__dict__, msg="添加成功")
 
 
@@ -149,38 +157,25 @@ async def delete_user(user_id: int, token: str = Depends(OAuth2)):
 
 # 获取用户列表
 async def get_user_list(pageSize: int = 10, current: int = 1, username: str = Query(None),
-                        mobile_phone: str = Query(None), email: str = Query(None), is_activate: bool = Query(None)):
+                        mobile_phone: str = Query(None), email: str = Query(None),
+                        is_activate: bool = Query(None)) -> None:
     """
     获取所有用户
     : return:
     """
-    query = {}
-    if username:
-        query.setdefault('username', username)
-    if mobile_phone:
-        query.setdefault('mobile_phone', mobile_phone)
-    if email:
-        query.setdefault('email', email)
-    if is_activate is not None:
-        query.setdefault('is_activate', is_activate)
-
-    user_data = User.annotate(key=F("id")).filter(**query).filter(id__not=1).all()
-    # 总数
-    total = await user_data.count()
-    # 查询
-    data = await user_data.limit(pageSize).offset(pageSize * (current - 1)).order_by("-create_time").values(
-        "id", "username", "mobile_phone", "email", "is_activate"
-    )
     return Response(data=data, msg="查询成功")
 
 
 # 获取Oath2
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+     OAuth2 compatible token login, get an access token for future requests
+    """
     user = await User.get_or_none(username=form_data.username)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     if not verify_password(form_data.password, user.password):
-        return False
+        raise HTTPException(status_code=400, detail="密码不对,别乱填.")
     access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         user.username,
