@@ -32,8 +32,9 @@ class Config(BaseSettings):
     SWAGGER_UI_OAUTH2_REDIRECT_URL = "/v1/oath2"
 
     # 阿里云短信配置
-    ALIYUN_ACCESSKEY_ID = 
-    ALIYUN_ACCESSKEY_SECRET = 
-    ALIYUN_SIGN_NAME = 
+    ALIYUN_ACCESSKEY_ID = ''
+    ALIYUN_ACCESSKEY_SECRET = ''
+    ALIYUN_SIGN_NAME = ''
+
 
 settings = Config()

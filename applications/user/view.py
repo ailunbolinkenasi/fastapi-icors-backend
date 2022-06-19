@@ -3,8 +3,9 @@ from datetime import timedelta
 import aioredis.exceptions
 from fastapi import Depends, Query, Form, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from tortoise.exceptions import IntegrityError
 from tortoise.expressions import Q, F
-from applications.user.bodys import UserInfo, SmsBody, CreateUser
+from applications.user.bodys import UserInfo, SmsBody, CreateUser, UpdateUser
 from aioredis import Redis
 from applications.user.bodys import RegisterBody, UserBodyBase
 from core.Utils import hash_password, verify_password
@@ -135,35 +136,61 @@ async def get_user_info(username: str = Query(default=None, max_length=20)):
 
 # 添加用户
 async def create_user(user: CreateUser):
+    """
+    :param user:  创建用户入参模型
+    :return:
+    """
     get_username = await User.get_or_none(username=user.username)
     # 如果添加用户存在的话
     if get_username:
         raise HTTPException(status_code=400, detail=f"{get_username.username}已经存在,请勿重复添加!")
     user.password = hash_password(user.password)
     await User.create(**user.dict())
-    return Response(data=user.__dict__, msg="添加成功")
+    return Response(msg=f"{user.username}添加成功!")
+
+
+# 更新用户
+async def update_user(user: UpdateUser):
+    """
+    :param user: 更新用户模型
+    :return:
+    """
+    user_check = await User.get_or_none(username=user.username)
+    if not user_check:
+        raise HTTPException(status_code=400, detail="更新用户不存在.")
+    if user.password:
+        user.password = hash_password(user.password)
+    data = user.dict()
+    try:
+        await User.filter(username=user.username).update(**data)
+    # 如果更新的字段触发数据库唯一索引
+    except IntegrityError as e:
+        return HTTPException(status_code=400,detail=f"{e}")
+    return Response(msg="数据更新成功")
 
 
 # 删除用户
-async def delete_user(user_id: int, token: str = Depends(OAuth2)):
+async def delete_user(user_id: int):
     """
     :user_id: 传入需要删除的用户Id
     """
     if user_id == 1:
-        raise HTTPException(status_code=400, detail="啊啊啊啊啊不要删除管理员啊😊")
-    data = {"token": token}
-    return Response(data=data, msg="成功")
+        raise HTTPException(status_code=400, detail="你是何方人物...系统账户不允许删除哦~")
+    get_user = await User.filter(pk=user_id).delete()
+    if not get_user:
+        raise HTTPException(status_code=400, detail=f"当前id为{user_id}的用户删除失败咯.")
+    return Response(msg="删除成功")
 
 
 # 获取用户列表
-async def get_user_list(pageSize: int = 10, current: int = 1, username: str = Query(None),
-                        mobile_phone: str = Query(None), email: str = Query(None),
-                        is_activate: bool = Query(None)) -> None:
-    """
-    获取所有用户
-    : return:
-    """
-    return Response(data=data, msg="查询成功")
+# async def get_user_list(pageSize: int = 10, current: int = 1, username: str = Query(None),
+#                         mobile_phone: str = Query(None), email: str = Query(None),
+#                         is_activate: bool = Query(None)) -> None:
+#     """
+#     获取所有用户
+#     : return:
+#     """
+#     return Response(data=data, msg="查询成功")
 
 
 # 获取Oath2

@@ -32,7 +32,7 @@ async def set_role(role_set: SetRole):
     if user_obj is None:
         raise HTTPException(status_code=400, detail="用户不存在!")
     # 清空角色
-    await  user_obj.role.clear()
+    await user_obj.role.clear()
     # 如果提交了roles列表
     if role_set.roles:
         roles = await Role.filter(role_status=True, id__in=role_set.roles).all()

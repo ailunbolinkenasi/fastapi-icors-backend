@@ -1,6 +1,7 @@
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr, Field
 
+
 # 基础的基础
 class BaseBody(BaseModel):
     class Config:
@@ -32,7 +33,7 @@ class UserInfo(BaseModel):
     username: str
     mobile_phone: str
     email: str
-    is_active: str = Field(..., description="用户是否激活")
+    is_activate: bool = Field(..., description="用户是否激活")
 
 
 # 创建用户模型
@@ -41,3 +42,11 @@ class CreateUser(UserBodyBase):
     mobile_phone: str = Field(..., regex=r"1[3-9]\d{9}$", description="手机号")
     is_activate: bool = Field(..., description="是否激活用户")
 
+
+# 更新用户模型
+class UpdateUser(BaseModel):
+    username: Optional[str] = Field(min_length=5, max_length=15)
+    password: Optional[str] = Field(min_length=7, max_length=255)
+    email: Optional[EmailStr] = Field(..., description="修改后的邮箱")
+    mobile_phone: Optional[str] = Field(..., regex=r"1[3-9]\d{9}$", description="手机号")
+    is_activate: Optional[bool] = Field(..., description="是否激活用户")

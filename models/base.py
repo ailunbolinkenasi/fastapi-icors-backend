@@ -28,16 +28,16 @@ class Role(TimestampMixin):
 # 用户表
 class User(TimestampMixin):
     role: fields.ManyToManyRelation[Role]
-    username = fields.CharField(unique=True, null=False, max_length=15, description="用户名")
-    password = fields.CharField(null=True, max_length=255)
+    username = fields.CharField(unique=True, null=False, min_length=5, max_length=15, description="用户名")
+    password = fields.CharField(null=False,min_length=8,max_length=255)
     mobile_phone = fields.CharField(unique=True, null=False, description="手机号", max_length=11)
-    email = fields.CharField(unique=True, null=False, description='邮箱', max_length=255)
+    email = fields.CharField(unique=True, null=False, description='邮箱', max_length=32)
     full_name = fields.CharField(null=True, description='姓名', max_length=15)
     is_activate = fields.BooleanField(default=0, description='0未激活 1正常 2禁用')
     is_staff = fields.BooleanField(default=False, description="用户类型 True:超级管理员 False:普通管理员")
     header_img = fields.CharField(null=True, max_length=255, description='用户头像')
     sex = fields.IntField(default=0, null=True, description='0未知 1男 2女')
-    login_host = fields.CharField(null=True, max_length=19, description="访问IP")
+    login_host = fields.CharField(null=True, max_length=15, description="访问IP")
 
     # 返回用户名默认
     def __str__(self):

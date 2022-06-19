@@ -7,7 +7,6 @@ from pydantic import ValidationError
 from starlette import status
 import jwt
 from core.config import settings
-from fastapi.security import OAuth2
 OAuth2 = OAuth2PasswordBearer(tokenUrl=settings.SWAGGER_UI_OAUTH2_REDIRECT_URL)
 
 
@@ -91,10 +90,10 @@ async def check_token_http(req: Request, security_scopes: SecurityScopes, token=
             is_pass = await Access.get_or_none(role__user__username=username, is_check=True,
                                                scopes__in=set(security_scopes.scopes),
                                                role__role_status=True)
+            print(is_pass)
             if not is_pass:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="没权限,别乱看！",
+                    detail="你要摆清楚你的定位,你不是一个拥有查看此内容的人!",
                     headers={"scopes": security_scopes.scope_str},
                 )
-
