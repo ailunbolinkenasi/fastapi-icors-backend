@@ -16,7 +16,7 @@ class SmsBody(BaseModel):
 
 # 用户基础模型
 class UserBodyBase(BaseBody):
-    username: str = Field(..., description="用户名", min_length=4, max_length=15)
+    username: str = Field(..., description="用户名", min_length=4, max_length=32)
     password: str = Field(..., description="用户密码", min_length=8)
 
 

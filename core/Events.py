@@ -25,8 +25,8 @@ def startup(app: FastAPI) -> Callable:
         # 注入缓存到app state
         app.state.cache = await sys_cache()
         # 启动计数器
-        redis = await aioredis.from_url("redis://localhost", encoding="utf-8", decode_responses=True)
-        await FastAPILimiter.init(redis)
+        # redis = await aioredis.from_url("redis://localhost", encoding="utf-8", decode_responses=True)
+        # await FastAPILimiter.init(redis)
 
     return app_start
 

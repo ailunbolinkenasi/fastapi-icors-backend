@@ -46,7 +46,8 @@ async def login(req: Request, user: UserBodyBase, token_cache: Redis = Depends(t
     """
     # 多个账号登录情况
     try:
-        user_obj = await User.get_or_none(Q(username=user.username))
+        user_obj = await User.get_or_none(
+            Q(username=user.username) | Q(mobile_phone=user.username))
     except AttributeError as e:
         raise HTTPException(status_code=500, detail=f"{e}")
     # 判断用户是否存在
@@ -78,11 +79,11 @@ async def login(req: Request, user: UserBodyBase, token_cache: Redis = Depends(t
 
 
 # 短信登录
-async def login_sms(auth: SmsBody, code_redis: Redis = Depends(sms_code_cache),
-                    token_redis: Redis = Depends(token_code_cache)):
+async def login_sms(auth: SmsBody, code_cache: Redis = Depends(sms_code_cache),
+                    token_cache: Redis = Depends(token_code_cache)):
     """
     :param auth: 短信认证模型
-    :param code_redis:  验证码缓存
+    :param code_cache:  验证码缓存
     :param token_redis:  登录token缓存
     :return:
     """
@@ -93,19 +94,20 @@ async def login_sms(auth: SmsBody, code_redis: Redis = Depends(sms_code_cache),
     if not get_user.is_activate:
         raise HTTPException(status_code=400, detail=f"{auth.mobile_phone}已被禁用,请联系管理员.")
     # 尝试获取token在redis中的缓存
-    token_cache = await token_redis.get(auth.mobile_phone)
+    token = await token_cache.get(auth.mobile_phone)
     # 判断用户是否登录
-    if token_cache:
-        return Response(data={"access_token": token_cache}, msg="已经登录,禁止重复登录", code=400)
+    if token:
+        return Response(data={"access_token": token}, msg="已经登录,禁止重复登录", code=400)
     # 获取redis中的短信验证码
-    redis_sms_code = await code_redis.get(auth.mobile_phone)
+    redis_sms_code = await code_cache.get(auth.mobile_phone)
     # 判断验证码
     if auth.sms_code == redis_sms_code:
         # token写入redis
         access_token = create_access_token(username=auth.mobile_phone)
-        await token_redis.set(name=auth.mobile_phone, value=access_token,
+        await token_cache.set(name=auth.mobile_phone, value=access_token,
                               ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-        # 验证码写入redis
+        # 登陆成功后删除用户验证码
+        await code_cache.delete(auth.mobile_phone)
         return Response(data={"access_token": access_token}, msg="登录成功", code=200)
     raise HTTPException(status_code=400, detail="验证码错误或者已经失效!")
 
@@ -165,7 +167,7 @@ async def update_user(user: UpdateUser):
         await User.filter(username=user.username).update(**data)
     # 如果更新的字段触发数据库唯一索引
     except IntegrityError as e:
-        return HTTPException(status_code=400,detail=f"{e}")
+        return HTTPException(status_code=400, detail=f"{e}")
     return Response(msg="数据更新成功")
 
 

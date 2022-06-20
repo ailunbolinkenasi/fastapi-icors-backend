@@ -12,7 +12,7 @@ class Config(BaseSettings):
     # 项目信息
     VERSION: str = "1.0.0"
     PROJECT_NAME: str = "icors设备管理系统接口文档"
-    DESCRIPTION: str = '服务的API接口文档'
+    DESCRIPTION: str = ''
     # 静态资源目录
     # STATIC_DIR: str = os.path.join(os.getcwd(), "static")
     # TEMPLATE_DIR: str = os.path.join(STATIC_DIR, "templates")
@@ -29,7 +29,7 @@ class Config(BaseSettings):
     JWT_SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
     JWT_ALGORITHM = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES = 24 * 60
-    SWAGGER_UI_OAUTH2_REDIRECT_URL = "/v1/oath2"
+    SWAGGER_UI_OAUTH2_REDIRECT_URL = "/v1/login/access_token"
 
     # 阿里云短信配置
     ALIYUN_ACCESSKEY_ID = ''

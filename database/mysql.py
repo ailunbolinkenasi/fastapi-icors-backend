@@ -8,10 +8,10 @@ DB_ORM_CONFIG = {
         "base": {
             'engine': 'tortoise.backends.mysql',
             "credentials": {
-                'host': os.getenv('BASE_HOST', 'localhost'),
+                'host': os.getenv('BASE_HOST', ''),
                 'user': os.getenv('BASE_USER', ''),
                 'password': os.getenv('BASE_PASSWORD', ''),
-                'port': int(os.getenv('BASE_PORT', 3306)),
+                'port': int(os.getenv('BASE_PORT', )),
                 'database': os.getenv('BASE_DB', ''),
             }
         },
@@ -38,7 +38,7 @@ DB_ORM_CONFIG = {
 
     },
     "apps": {
-        "base": {"models": ["models.base",'models.device'], "default_connection": "base"},
+        "base": {"models": ["models.base","models.device"], "default_connection": "base"},
         # "db2": {"models": ["models.db2"], "default_connection": "db2"},
         # "db3": {"models": ["models.db3"], "default_connection": "db3"}
     },

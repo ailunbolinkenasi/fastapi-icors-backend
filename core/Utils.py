@@ -52,7 +52,6 @@ def create_client(
     @return: Client
     @throws Exception
     """
-    print(access_key_id)
     config = open_api_models.Config(
         # 您的AccessKey ID,
         access_key_id=access_key_id,

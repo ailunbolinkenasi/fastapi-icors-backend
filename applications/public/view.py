@@ -1,4 +1,5 @@
 import random
+import json
 import Tea.exceptions
 from fastapi import Depends,HTTPException
 from core.config import settings
@@ -11,18 +12,18 @@ from aioredis import Redis
 
 
 # 阿里云短信发送接口
-async def aliyun_send(mobile_phone: str, sms_cache: Redis = Depends(sms_code_cache)) -> None:
+async def aliyun_send(mobile_phone: str, sms_cache: Redis = Depends(sms_code_cache)) -> Response:
     """
     :param mobile_phone:  发送短信的手机号
-    :param template_code:  短信模板,默认模板 SMS_242870552
     :return:
     """
     # 判断传入手机号和短信模板是否为空
     if mobile_phone == '':
-        return ErrorResponse(errmsg="禁止空手机号或短信模板!", code=400)
+        raise HTTPException(status_code=400,detail="禁止传入空手机号！")
     client = create_client(settings.ALIYUN_ACCESSKEY_ID, settings.ALIYUN_ACCESSKEY_SECRET)
     # 生成六位数随机验证码
     verification_code = str(random.randrange(1000, 999999))
+    print("当前验证码为:",verification_code)
     try:
         # 发送请求
         send_sms_request = dysmsapi_20170525_models.SendSmsRequest(
@@ -40,7 +41,7 @@ async def aliyun_send(mobile_phone: str, sms_cache: Redis = Depends(sms_code_cac
         raise HTTPException(status_code=400,detail=" AccessKeyId is mandatory for this action")
 
     if data.body.code == "OK":
-        # 将验证码写入Redis
+        # 将验证码写入Redis,过期时间为60秒
         await sms_cache.set(name=mobile_phone, value=verification_code, ex=60)
         return Response(data=data.__dict__.get("body"), msg="短信发送成功")
     return ErrorResponse(data=data.__dict__.get("body"), errmsg="发送失败", code=400)

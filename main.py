@@ -28,7 +28,7 @@ def swagger_monkey_patch(*args, **kwargs):
         swagger_css_url="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui.css")
 
 
-# applications.get_swagger_ui_html = swagger_monkey_patch
+applications.get_swagger_ui_html = swagger_monkey_patch
 
 # 跨域请求处理
 application.add_middleware(

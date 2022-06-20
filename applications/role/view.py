@@ -2,6 +2,7 @@ from models.base import User, Role, Access
 from fastapi import HTTPException
 from applications.role.bodys import SetRole
 from core.mall import Response
+from tortoise.expressions import OperationalError
 
 
 # 获取用用户权限集合
@@ -10,7 +11,10 @@ async def get_user_role(user_id: int):
     :param user_id:  传入用户Id
     :return:
     """
-    user_role = await Role.filter(user__id=user_id).values("role_name", "role_status")
+    try:
+        user_role = await Role.filter(user__id=user_id).values("role_name", "role_status")
+    except OperationalError as e:
+        raise HTTPException(status_code=400, detail=f"{e}")
     # 查询用户的所有权限,反向查询role角色表中的跟user表关联的user_id
     user_access_list = await Access.filter(role__user__id=user_id, is_check=True).values("id", "scopes")
     # 验证当前用户对当前操作的作用域是否有权限
