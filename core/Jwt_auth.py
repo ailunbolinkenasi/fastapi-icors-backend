@@ -39,8 +39,10 @@ async def check_token_http(req: Request, security_scopes: SecurityScopes, token=
     try:
         # 用户token解码
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        print("当前Token:",token)
         # 获取用户id,当获取不到则默认为空
         username = payload.get("username", None)
+        # print(username)
         # 如果无法获取到用户信息
         if username is None:
             credentials_exception = HTTPException(
@@ -74,7 +76,6 @@ async def check_token_http(req: Request, security_scopes: SecurityScopes, token=
         )
     # 验证权限
     get_user = await User.get_or_none(username=username)
-    print(get_user)
     if not get_user or get_user.is_activate != 1:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -86,11 +87,11 @@ async def check_token_http(req: Request, security_scopes: SecurityScopes, token=
         # 返回当前权限域
         print("当前域: ", security_scopes.scopes)
         scopes = []
+        # 非admin账户并且请求的接口需要权限验证
         if not get_user.is_staff and security_scopes.scopes:
-            is_pass = await Access.get_or_none(role__user__username=username, is_check=True,
-                                               scopes__in=set(security_scopes.scopes),
-                                               role__role_status=True)
-            print(is_pass)
+            is_pass = await Access.filter(role__user__email="beilanzhisen@163.com",is_check=True,
+                                          scopes__in=set(security_scopes.scopes)).all()
+            print("权限查询结果为:",is_pass)
             if not is_pass:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
