@@ -1,3 +1,5 @@
+import jwt
+import base64
 from fastapi import Depends, Request, HTTPException
 from typing import Union
 from fastapi.security import SecurityScopes, OAuth2PasswordBearer
@@ -5,8 +7,8 @@ from datetime import datetime, timedelta
 from models.base import User, Access
 from pydantic import ValidationError
 from starlette import status
-import jwt
 from core.config import settings
+
 OAuth2 = OAuth2PasswordBearer(tokenUrl=settings.SWAGGER_UI_OAUTH2_REDIRECT_URL)
 
 
@@ -25,6 +27,9 @@ def create_access_token(username: str, expires_delta: Union[timedelta, None] = N
     # 更新过期时间
     token_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(token_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    print(encoded_jwt)
+    encoded_jwt_base64 = base64.encode(encoded_jwt)
+    print(encoded_jwt_base64)
     return encoded_jwt
 
 
@@ -39,7 +44,7 @@ async def check_token_http(req: Request, security_scopes: SecurityScopes, token=
     try:
         # 用户token解码
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
-        print("当前Token:",token)
+        print("当前Token:", token)
         # 获取用户id,当获取不到则默认为空
         username = payload.get("username", None)
         # print(username)
@@ -89,9 +94,9 @@ async def check_token_http(req: Request, security_scopes: SecurityScopes, token=
         scopes = []
         # 非admin账户并且请求的接口需要权限验证
         if not get_user.is_staff and security_scopes.scopes:
-            is_pass = await Access.filter(role__user__email="beilanzhisen@163.com",is_check=True,
+            is_pass = await Access.filter(role__user__username=username, is_check=True,
                                           scopes__in=set(security_scopes.scopes)).all()
-            print("权限查询结果为:",is_pass)
+            print("权限查询结果为:", is_pass)
             if not is_pass:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,

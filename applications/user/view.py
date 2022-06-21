@@ -19,13 +19,10 @@ from models.base import User, Role, Access
 # 用户注册
 async def register(user: RegisterBody, token_cache: Redis = Depends(token_code_cache)):
     # 检查账号是否存在
-    get_user = await User.get_or_none(
+    get_user = await User.filter(
         Q(username=user.username) | Q(mobile_phone=user.mobile_phone) | Q(email=user.email))
     if get_user:
-        raise HTTPException(status_code=400, detail=f"用户已经注册.")
-    if await User.get_or_none(Q(username=user.username) | Q(mobile_phone=user.mobile_phone) | Q(email=user.email)):
         raise HTTPException(status_code=400, detail="用户已经注册.")
-
     user.password = hash_password(user.password)
     # 注册后也会将token存储到Redis当中
     access_token = create_access_token(username=user.username)
@@ -61,19 +58,18 @@ async def login(req: Request, user: UserBodyBase, token_cache: Redis = Depends(t
         user_token = await token_cache.get(name=user.username)
     # 如果抛出Redis连接异常
     except aioredis.connection.ConnectionError as e:
-        raise HTTPException(status_code=500, detail="获取失败,请检查Redis连接是否正常！")
-
-    if user_token:
-        raise HTTPException(status_code=400, detail=f"{user.username}已经登陆,禁止重复登陆.")
+        raise HTTPException(status_code=500, detail="获取登录token失败,请检查Redis连接是否正常！")
     # 如果获取到用户,然后进行验证密码
     if verify_password(user.password, user_obj.password):
+        if user_token:
+            raise HTTPException(status_code=400, detail=f"{user.username}已经登陆,禁止重复登陆.")
         # 验证密码成功,生成access_token存入Redis
         access_token = create_access_token(username=user.username)
         try:
             await token_cache.set(name=user.username, value=access_token, ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
         except aioredis.connection.ConnectionError:
             raise HTTPException(status_code=500, detail="Redis服务连接失败,请检查后端日志!")
-        data = {"access_token": access_token, "expires_in": settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60}
+        data = {"access_token": access_token, "expires_in": settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES}
         return Response(data=data, msg="登录成功")
     raise HTTPException(status_code=400, detail="用户名或密码错误!")
 
@@ -95,13 +91,13 @@ async def login_sms(auth: SmsBody, code_cache: Redis = Depends(sms_code_cache),
         raise HTTPException(status_code=400, detail=f"{auth.mobile_phone}已被禁用,请联系管理员.")
     # 尝试获取token在redis中的缓存
     token = await token_cache.get(auth.mobile_phone)
-    # 判断用户是否登录
-    if token:
-        return Response(data={"access_token": token}, msg="已经登录,禁止重复登录", code=400)
     # 获取redis中的短信验证码
     redis_sms_code = await code_cache.get(auth.mobile_phone)
     # 判断验证码
     if auth.sms_code == redis_sms_code:
+        # 判断用户是否登录
+        if token:
+            return Response(data={"access_token": token}, msg="已经登录,禁止重复登录", code=400)
         # token写入redis
         access_token = create_access_token(username=auth.mobile_phone)
         await token_cache.set(name=auth.mobile_phone, value=access_token,

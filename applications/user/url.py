@@ -39,7 +39,7 @@ user.get("/user/info",
 user.post('/create/user',
           summary="添加用户",
           tags=['用户服务'],
-          # dependencies=[Security(check_token_http, scopes=["user_add_ac"])],
+          dependencies=[Security(check_token_http, scopes=["user_add_ac"])],
           )(create_user)
 
 user.put("/update/user",
@@ -58,6 +58,5 @@ user.delete("/delete/user",
 user.post('/login/access_token',
           summary="获取token接口",
           tags=['获取用户token接口'],
-          dependencies=[Depends(RateLimiter(times=2, milliseconds=5))],
           response_model=Token
           )(login_for_access_token)

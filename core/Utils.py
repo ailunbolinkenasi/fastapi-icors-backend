@@ -1,5 +1,6 @@
 import hashlib
 import uuid
+import pusher
 from fastapi.security import SecurityScopes, OAuth2PasswordBearer
 from passlib.context import CryptContext
 from typing import Optional, Union, List

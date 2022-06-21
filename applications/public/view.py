@@ -1,6 +1,7 @@
 import random
 import jwt
 import Tea.exceptions
+from pusher import Pusher,errors
 from fastapi import Depends, HTTPException
 from jwt import PyJWTError
 from pydantic import ValidationError
@@ -79,39 +80,57 @@ async def check_token(token: str):
         raise HTTPException(status_code=400, detail="Token数据内容校验失败")
 
 
-class Chat(WebSocketEndpoint):
-    encoding = "json"
-    # 活跃连接数量
-    activate_connections = [
+# class Chat(WebSocketEndpoint):
+#     encoding = "json"
+#     # 活跃连接数量
+#     activate_connections = [
+#
+#     ]
+#
+#     # 创建websocket
+#     async def create_websocket(self, web_socket: WebSocket):
+#         """
+#         :param web_socket:
+#         :return:
+#         """
+#         user_type = web_socket.query_params.get("user_type")
+#         token = web_socket.query_params.get("sec-websocket")
+#         real_ip = web_socket.query_params.get("x-forwarded-for")
+#         real_host = web_socket.query_params.get("host")
+#         try:
+#             # 如果获取不到用户类型或者token则返回WebSocketDisconnect错误
+#             if not user_type or token:
+#                 raise WebSocketDisconnect
+#             username = check_token(token)
+#             if not username:
+#                 raise WebSocketDisconnect
+#             # 接受http连接
+#             await web_socket.accept(subprotocol=token)
+#
+#             for connection in self.activate_connections:
+#                 if connection['username'] == username and connection['user_type'] == user_type:
+#                     # 删除历史连接
+#                     self.activate_connections.remove(connection)
+#             print(f"客户端IP: {real_ip},来源主机: {real_host},用户类型: {user_type},用户名: {username}")
+#         except WebSocketDisconnect:
+#             # 关闭socket连接
+#             await web_socket.close()
+#             print("连接关闭!")
 
-    ]
 
-    # 创建websocket
-    async def create_websocket(self, web_socket: WebSocket):
-        """
-        :param web_socket:
-        :return:
-        """
-        user_type = web_socket.query_params.get("user_type")
-        token = web_socket.query_params.get("sec-websocket")
-        real_ip = web_socket.query_params.get("x-forwarded-for")
-        real_host = web_socket.query_params.get("host")
-        try:
-            # 如果获取不到用户类型或者token则返回WebSocketDisconnect错误
-            if not user_type or token:
-                raise WebSocketDisconnect
-            username = check_token(token)
-            if not username:
-                raise WebSocketDisconnect
-            # 接受http连接
-            await web_socket.accept(subprotocol=token)
-
-            for connection in self.activate_connections:
-                if connection['username'] == username and connection['user_type'] == user_type:
-                    # 删除历史连接
-                    self.activate_connections.remove(connection)
-            print(f"客户端IP: {real_ip},来源主机: {real_host},用户类型: {user_type},用户名: {username}")
-        except WebSocketDisconnect:
-            # 关闭socket连接
-            await web_socket.close()
-            print("连接关闭!")
+# 消息推送服务
+async def push_chat(message: str):
+    pusher_client = Pusher(
+        app_id='1426377',
+        key='00008e3994f1fc4c7baf',
+        secret='dd57cbc96d42b6525f87',
+        cluster='ap1',
+        ssl=True
+    )
+    # 尝试发送消息e
+    try:
+        pusher_client.trigger('my-channel', 'my-event', {'消息': format(message)})
+    except errors.PusherError as e:
+        # print(e)
+        raise HTTPException(status_code=400,detail="消息推送失败！")
+    return Response(msg="消息推送成功")
