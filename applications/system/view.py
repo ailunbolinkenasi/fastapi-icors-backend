@@ -1,7 +1,6 @@
 from fastapi import Depends, Query, HTTPException
 from tortoise.expressions import Q
-from applications.system.bodys import AddHost
-from applications.system.bodys import AddHost as UpdateHost
+from applications.system.bodys import AddHost,UpdateHost
 from core.mall import Response
 from models.device import Device
 from fastapi import Request
@@ -11,7 +10,6 @@ from typing import Optional
 # 添加服务器信息
 async def add_hosts(host: AddHost):
     hosts_list = await Device.get_or_none(ipaddr=host.ipaddr)
-
     if hosts_list:
         raise HTTPException(status_code=400, detail=f"{hosts_list.ipaddr}已添加!")
     await Device.create(**host.dict())
@@ -21,8 +19,9 @@ async def add_hosts(host: AddHost):
 # 删除服务器信息
 async def del_hosts(id: int):
     delete_host = await Device.filter(pk=id).delete()
-    if delete_host is None:
-        raise HTTPException(status_code=400, detail=f"{id}删除失败!")
+    print(delete_host)
+    if not delete_host:
+        raise HTTPException(status_code=400, detail=f"当前删除id为{id}的主机不存在")
     return Response(msg="删除成功")
 
 
