@@ -3,11 +3,11 @@ from datetime import timedelta
 import aioredis.exceptions
 from fastapi import Depends, Query, Form, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
-from tortoise.exceptions import IntegrityError
+from tortoise.exceptions import IntegrityError, DBConnectionError
 from tortoise.expressions import Q, F
-from applications.user.bodys import UserInfo, SmsBody, CreateUser, UpdateUser
+from applications.user.bodys import UserInfo, CreateUser, UpdateUser
 from aioredis import Redis
-from applications.user.bodys import RegisterBody, UserBodyBase
+from applications.user.bodys import RegisterBody, UserBodyBase, SmsBody
 from core.Utils import hash_password, verify_password
 from core.mall import Response
 from core.config import settings
@@ -47,6 +47,8 @@ async def login(req: Request, user: UserBodyBase, token_cache: Redis = Depends(t
             Q(username=user.username) | Q(mobile_phone=user.username))
     except AttributeError as e:
         raise HTTPException(status_code=500, detail=f"{e}")
+    except DBConnectionError as e:
+        raise HTTPException(status_code=500, detail="Can't connect to MySQL server")
     # 判断用户是否存在
     if not user_obj:
         raise HTTPException(status_code=400, detail=f"{user.username}密码验证失败错误.")
@@ -84,7 +86,10 @@ async def login_sms(auth: SmsBody, code_cache: Redis = Depends(sms_code_cache),
     :return:
     """
     # 判断用户是否存在
-    get_user = await User.get_or_none(Q(username=auth.mobile_phone) | Q(mobile_phone=auth.mobile_phone))
+    try:
+        get_user = await User.get_or_none(Q(username=auth.mobile_phone) | Q(mobile_phone=auth.mobile_phone))
+    except DBConnectionError as e:
+        raise HTTPException(status_code=500, detail="Can't connect to MySQL server")
     if not get_user:
         raise HTTPException(status_code=400, detail="密码验证失败!")
     if not get_user.is_activate:
