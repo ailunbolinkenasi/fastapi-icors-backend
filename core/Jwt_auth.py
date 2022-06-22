@@ -27,9 +27,6 @@ def create_access_token(username: str, expires_delta: Union[timedelta, None] = N
     # 更新过期时间
     token_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(token_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
-    print(encoded_jwt)
-    encoded_jwt_base64 = base64.encode(encoded_jwt)
-    print(encoded_jwt_base64)
     return encoded_jwt
 
 
