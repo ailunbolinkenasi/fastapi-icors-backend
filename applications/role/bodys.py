@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import Field
 from typing import Optional, List
+from dataclasses import dataclass
 
 
 # 角色分配模型
-class SetRole(BaseModel):
+@dataclass
+class SetRole:
     id: int
     roles: Optional[List[int]] = Field(default=[], description="角色")
