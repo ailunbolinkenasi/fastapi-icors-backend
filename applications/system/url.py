@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Security
-from applications.system.view import add_hosts, update_hosts, get_hosts, del_hosts
+from applications.system.view import add_hosts, update_hosts, host_list, del_hosts
 from applications.system.bodys import AddHost
 from core.Jwt_auth import check_token_http
 
@@ -11,7 +11,7 @@ system.get("/list/host",
            summary="服务器信息获取",
            tags=['服务器信息'],
            dependencies=[Security(check_token_http, scopes=['host_list.ac'])]
-           )(get_hosts)
+           )(host_list)
 
 system.post("/create/host",
             summary="服务器信息添加",

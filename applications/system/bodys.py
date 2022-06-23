@@ -1,22 +1,18 @@
 from typing import Optional
-from pydantic import Field
+from ipaddress import IPv4Address
+from pydantic import Field, BaseModel
 from dataclasses import dataclass
+
 
 # 地址管理入参模型
 
 
-# 基础的基础
-@dataclass
-class BaseBody:
-    class Config:
-        anystr_strip_whitespace = True
-
-
 # 添加主机
-@dataclass
-class AddHost:
-    physical_addr: str = Field(..., description="服务器硬件地址", max_length=32)
-    ipaddr: str = Field(..., description="IP地址", max_length=32)
+class AddHost(BaseModel):
+    # physical_addr: IPv4Address = Field(..., description="服务器硬件地址")
+    # ipaddr: str = Field(..., description="IP地址", max_length=32)
+    physical_addr: IPv4Address = Field(..., description="物理机地址")
+    ipaddr: IPv4Address = Field(..., description="虚拟机IP地址")
     cpu: str = Field(..., description="CPU核心数量", max_length=8)
     memory: str = Field(..., description="内存容量", max_length=8)
     hard_disk: str = Field(..., description="硬盘容量", max_length=8)
@@ -26,10 +22,9 @@ class AddHost:
 
 
 # 更新主机
-@dataclass
-class UpdateHost:
-    physical_addr: str = Field(..., description="服务器硬件地址", max_length=32)
-    ipaddr: str = Field(..., description="IP地址", max_length=32)
+class UpdateHost(BaseModel):
+    physical_addr: IPv4Address = Field(..., description="物理机地址")
+    ipaddr: IPv4Address = Field(..., description="虚拟机IP地址")
     cpu: str = Field(..., description="CPU核心数量", max_length=8)
     memory: str = Field(..., description="内存容量", max_length=8)
     area: str = Field(..., description="服务器所在地区", max_length=255)

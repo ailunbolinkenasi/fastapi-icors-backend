@@ -1,5 +1,11 @@
 from dataclasses import dataclass
-from pydantic import Field
+from pydantic import Field, BaseModel
+from typing import Optional, List
+
+
+# 开启自定义数据类型转换
+class Config:
+    arbitrary_types_allowed = True
 
 
 # 短信登录模型
