@@ -2,7 +2,6 @@ from tortoise import fields
 from tortoise.models import Model
 from models.base import TimestampMixin
 
-
 # 地址管理表
 class Device(TimestampMixin):
     area = fields.CharField(null=True, description="设备存放地址", max_length=255)

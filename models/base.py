@@ -29,7 +29,7 @@ class Role(TimestampMixin):
 class User(TimestampMixin):
     role: fields.ManyToManyRelation[Role]
     username = fields.CharField(unique=True, null=False, min_length=5, max_length=32, description="用户名")
-    password = fields.CharField(null=False,min_length=8,max_length=255)
+    password = fields.CharField(null=False, min_length=8, max_length=255)
     mobile_phone = fields.CharField(unique=True, null=False, description="手机号", max_length=11)
     email = fields.CharField(unique=True, null=False, description='邮箱', max_length=32)
     full_name = fields.CharField(null=True, description='姓名', max_length=15)

@@ -4,7 +4,7 @@ from fastapi import Depends, Request, HTTPException
 from typing import Union
 from fastapi.security import SecurityScopes, OAuth2PasswordBearer
 from datetime import datetime, timedelta
-from models.base import User, Access
+from models.base import User, Access,Role
 from pydantic import ValidationError
 from starlette import status
 from core.config import settings
@@ -41,10 +41,9 @@ async def check_token_http(req: Request, security_scopes: SecurityScopes, token=
     try:
         # 用户token解码
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
-        print("当前Token:", token)
         # 获取用户id,当获取不到则默认为空
         username = payload.get("username", None)
-        # print(username)
+        print("Payload解析用户名为:", username)
         # 如果无法获取到用户信息
         if username is None:
             credentials_exception = HTTPException(
@@ -93,6 +92,8 @@ async def check_token_http(req: Request, security_scopes: SecurityScopes, token=
         if not get_user.is_staff and security_scopes.scopes:
             is_pass = await Access.filter(role__user__username=username, is_check=True,
                                           scopes__in=set(security_scopes.scopes)).all()
+            username = await Role.filter(user__username=username)
+            print("当前查询用户名",username)
             print("权限查询结果为:", is_pass)
             if not is_pass:
                 raise HTTPException(
