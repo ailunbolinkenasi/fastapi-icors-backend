@@ -88,7 +88,7 @@ async def push_chat(message: str):
         cluster='ap1',
         ssl=True
     )
-    # 尝试发送消息e
+    # 尝试发送消息
     try:
         pusher_client.trigger('my-channel', 'my-event', {'消息': format(message)})
     except errors.PusherError as e:

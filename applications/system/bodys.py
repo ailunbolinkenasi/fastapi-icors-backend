@@ -1,8 +1,6 @@
 from typing import Optional
 from ipaddress import IPv4Address
 from pydantic import Field, BaseModel
-from dataclasses import dataclass
-
 
 # 地址管理入参模型
 

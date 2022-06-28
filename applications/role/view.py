@@ -18,7 +18,7 @@ async def get_user_role(user_id: int):
     # 查询用户的所有权限,反向查询role角色表中的跟user表关联的user_id
     user_access_list = await Access.filter(role__user__id=user_id, is_check=True).values("id", "scopes")
     # 验证当前用户对当前操作的作用域是否有权限
-    is_permi = await Access.get_or_none(role__user__id=user_id, is_check=True, scopes="user_info",
+    is_per = await Access.get_or_none(role__user__id=user_id, is_check=True, scopes="user_info",
                                         role__role_status=True)
     data = {
         "role_info": user_role,
@@ -35,20 +35,11 @@ async def set_role(role_set: SetRole):
     user_obj = await User.get_or_none(pk=role_set.id)
     if user_obj is None:
         raise HTTPException(status_code=400, detail="用户不存在!")
-    # 清空角色role_user这张表的内容,只会删除当前Id的内容
+    # 清空角色
     await user_obj.role.clear()
     # 如果提交了roles列表
     if role_set.roles:
-        # 查询role_statue=True,并且提交的id存在role表中
         roles = await Role.filter(role_status=True, id__in=role_set.roles).all()
-        print(roles)
-        # 如果传入的角色列表存在Role角色表中
-        if roles:
-            # 分配角色
-            try:
-                await user_obj.role.add(*roles)
-            except OperationalError as e:
-                raise HTTPException(status_code=400,detail="权限分配失败!")
-    if not role_set.roles:
-        raise HTTPException(status_code=400,detail="传入的角色id在角色表中不存在.")
-    return Response(msg="角色分配成功")
+        # 分配角色
+        await user_obj.role.add(*roles)
+    return Response(data=user_obj, msg="角色分配成功")

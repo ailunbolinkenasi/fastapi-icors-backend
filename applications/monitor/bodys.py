@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pydantic import Field, BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 
 # 开启自定义数据类型转换
@@ -9,4 +9,5 @@ class Config:
 
 
 class MonitorList(BaseModel):
-    cpu_params: Optional[List] = Field(...)
+    cpu_percent: str = Field(..., description="CPU百分比使用率")
+    cpu_count: str = Field(..., description="CPU核心数")

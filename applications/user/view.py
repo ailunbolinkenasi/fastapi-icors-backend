@@ -30,6 +30,7 @@ async def register(user: RegisterBody, token_cache: Redis = Depends(token_code_c
         await token_cache.set(name=user.username, value=access_token, ex=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     except aioredis.exceptions.ConnectionError:
         raise HTTPException(status_code=500, detail="Redis连接失败,请检查服务端Redis状态,")
+    # **user.dict会转换成ORM对应的字段
     await User.create(**user.dict())
     return Response(data={"access_token": access_token}, msg="注册成功")
 
@@ -45,6 +46,7 @@ async def login(req: Request, user: UserBodyBase, token_cache: Redis = Depends(t
     try:
         user_obj = await User.get_or_none(
             Q(username=user.username) | Q(mobile_phone=user.username))
+        print(user.__fields__.keys())
     except AttributeError as e:
         raise HTTPException(status_code=500, detail=f"{e}")
     except DBConnectionError as e:
